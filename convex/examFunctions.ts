@@ -68,11 +68,28 @@ export const getQuestions = query({
   handler: async (ctx, args) => {
     const questions = await ctx.db
       .query("questions")
-      .withIndex("by_exam_subject", (q) => 
+      .withIndex("by_exam_subject", (q) =>
         q.eq("examType", args.examType).eq("subject", args.subject)
       )
       .take(args.limit || 10);
 
+    return questions;
+  },
+});
+
+// Get questions for a specific mock exam (so "take exam" uses the generated exam's questions)
+export const getQuestionsForMockExam = query({
+  args: {
+    mockExamId: v.id("mockExams"),
+  },
+  handler: async (ctx, args) => {
+    const mockExam = await ctx.db.get(args.mockExamId);
+    if (!mockExam) return [];
+    const questions = [];
+    for (const id of mockExam.questionIds) {
+      const q = await ctx.db.get(id);
+      if (q) questions.push(q);
+    }
     return questions;
   },
 });
@@ -276,6 +293,76 @@ export const getWeeklyLeaderboard = query({
     }
 
     return leaderboard.sort((a, b) => b.score - a.score);
+  },
+});
+
+// Internal mutation to add questions extracted from PDF
+export const addQuestionsFromPdf = internalMutation({
+  args: {
+    examType: v.union(v.literal("JAMB"), v.literal("WAEC"), v.literal("ICAN"), v.literal("TRCN")),
+    subject: v.string(),
+    year: v.number(),
+    questions: v.array(v.object({
+      questionText: v.string(),
+      options: v.array(v.string()),
+      correctAnswer: v.string(),
+      explanation: v.string(),
+      difficulty: v.optional(v.union(v.literal("easy"), v.literal("medium"), v.literal("hard"))),
+      topic: v.optional(v.string()),
+    })),
+  },
+  handler: async (ctx, args) => {
+    let count = 0;
+    for (const q of args.questions) {
+      await ctx.db.insert("questions", {
+        examType: args.examType,
+        subject: args.subject,
+        year: args.year,
+        questionText: q.questionText,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation,
+        difficulty: q.difficulty ?? "medium",
+        topic: q.topic ?? "General",
+      });
+      count++;
+    }
+    return count;
+  },
+});
+
+// Internal mutation to add questions with per-question year assignment (for year ranges)
+export const addQuestionsFromPdfWithYears = internalMutation({
+  args: {
+    examType: v.union(v.literal("JAMB"), v.literal("WAEC"), v.literal("ICAN"), v.literal("TRCN")),
+    subject: v.string(),
+    questions: v.array(v.object({
+      questionText: v.string(),
+      options: v.array(v.string()),
+      correctAnswer: v.string(),
+      explanation: v.string(),
+      year: v.number(),
+      difficulty: v.optional(v.union(v.literal("easy"), v.literal("medium"), v.literal("hard"))),
+      topic: v.optional(v.string()),
+    })),
+  },
+  handler: async (ctx, args) => {
+    let count = 0;
+    for (const q of args.questions) {
+      await ctx.db.insert("questions", {
+        examType: args.examType,
+        subject: args.subject,
+        year: q.year,
+        questionText: q.questionText,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation,
+        difficulty: q.difficulty ?? "medium",
+        topic: q.topic ?? "General",
+      });
+      count++;
+    }
+    return count;
   },
 });
 

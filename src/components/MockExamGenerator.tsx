@@ -13,16 +13,15 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
   const [examStarted, setExamStarted] = useState(false);
   const [examCompleted, setExamCompleted] = useState(false);
   const [examResult, setExamResult] = useState<any>(null);
+  const [isSeeding, setIsSeeding] = useState(false);
 
   const generateMockExam = useMutation(api.examFunctions.generatePredictiveMockExam);
-  const getQuestions = useQuery(api.examFunctions.getQuestions, 
-    currentExam ? {
-      examType: userProfile.examType,
-      subject: selectedSubjects[0] || "Mathematics",
-      limit: 20
-    } : "skip"
+  const examQuestions = useQuery(
+    api.examFunctions.getQuestionsForMockExam,
+    currentExam ? { mockExamId: currentExam._id } : "skip"
   );
   const submitTest = useMutation(api.examFunctions.submitTestAttempt);
+  const seedSampleQuestions = useMutation(api.seedData.seedSampleQuestions);
 
   const handleGenerateExam = async () => {
     if (selectedSubjects.length === 0) {
@@ -48,8 +47,8 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
   };
 
   const handleStartExam = () => {
-    if (!getQuestions || getQuestions.length === 0) {
-      toast.error("No questions available. Please try again.");
+    if (!examQuestions || examQuestions.length === 0) {
+      toast.error("No questions available. Load sample questions first, then generate a new exam.");
       return;
     }
 
@@ -77,9 +76,9 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
   };
 
   const handleSubmitExam = async () => {
-    if (!currentExam || !getQuestions) return;
+    if (!currentExam || !examQuestions) return;
 
-    const examAnswers = getQuestions.map(question => ({
+    const examAnswers = examQuestions.map(question => ({
       questionId: question._id,
       selectedAnswer: answers[question._id] || "",
       timeSpent: 30, // Mock time spent per question
@@ -98,6 +97,22 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
     } catch (error) {
       toast.error("Failed to submit exam. Please try again.");
       console.error(error);
+    }
+  };
+
+  const handleLoadSampleQuestions = async () => {
+    setIsSeeding(true);
+    try {
+      const result = await seedSampleQuestions();
+      toast.success(result === "Questions already seeded" ? "Question bank already has questions." : "Sample questions loaded! Generate your mock exam again.");
+      if (result !== "Questions already seeded") {
+        setCurrentExam(null);
+      }
+    } catch (error) {
+      toast.error("Failed to load sample questions.");
+      console.error(error);
+    } finally {
+      setIsSeeding(false);
     }
   };
 
@@ -162,9 +177,9 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
     );
   }
 
-  if (examStarted && currentExam && getQuestions) {
-    const currentQuestion = getQuestions[currentQuestionIndex];
-    const progress = ((currentQuestionIndex + 1) / getQuestions.length) * 100;
+  if (examStarted && currentExam && examQuestions && examQuestions.length > 0) {
+    const currentQuestion = examQuestions[currentQuestionIndex];
+    const progress = ((currentQuestionIndex + 1) / examQuestions.length) * 100;
 
     return (
       <div className="max-w-4xl mx-auto space-y-6">
@@ -174,7 +189,7 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
             <div>
               <h1 className="text-xl font-bold">Predictive {userProfile.examType} Mock Exam</h1>
               <p className="text-gray-600">
-                Question {currentQuestionIndex + 1} of {getQuestions.length}
+                Question {currentQuestionIndex + 1} of {examQuestions.length}
               </p>
             </div>
             <div className="text-right">
@@ -229,7 +244,7 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
             Previous
           </button>
           
-          {currentQuestionIndex === getQuestions.length - 1 ? (
+          {currentQuestionIndex === examQuestions.length - 1 ? (
             <button
               onClick={handleSubmitExam}
               className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
@@ -238,7 +253,7 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
             </button>
           ) : (
             <button
-              onClick={() => setCurrentQuestionIndex(Math.min(getQuestions.length - 1, currentQuestionIndex + 1))}
+              onClick={() => setCurrentQuestionIndex(Math.min(examQuestions.length - 1, currentQuestionIndex + 1))}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Next
@@ -314,29 +329,55 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
         </div>
       ) : (
         <div className="bg-white border rounded-xl p-8 text-center">
-          <div className="text-6xl mb-4">📝</div>
-          <h2 className="text-2xl font-bold mb-4">Your Mock Exam is Ready!</h2>
-          <p className="text-gray-600 mb-6">
-            Duration: {userProfile.examType === "JAMB" ? "3 hours" : "2 hours"} | 
-            Questions: 20 | Subjects: {selectedSubjects.join(", ")}
-          </p>
-          
-          <div className="bg-yellow-50 p-4 rounded-lg mb-6">
-            <h3 className="font-semibold text-yellow-900 mb-2">⚠️ Important Instructions</h3>
-            <ul className="text-yellow-800 text-sm text-left space-y-1">
-              <li>• Once started, the timer cannot be paused</li>
-              <li>• You can navigate between questions freely</li>
-              <li>• Make sure you have a stable internet connection</li>
-              <li>• Your progress will be automatically saved</li>
-            </ul>
-          </div>
+          {examQuestions !== undefined && examQuestions.length === 0 ? (
+            <>
+              <div className="text-6xl mb-4">📚</div>
+              <h2 className="text-2xl font-bold mb-4">Question Bank is Empty</h2>
+              <p className="text-gray-600 mb-6">
+                This exam has no questions because there are no questions in the bank yet. Load sample questions below, then generate a new mock exam.
+              </p>
+              <button
+                onClick={handleLoadSampleQuestions}
+                disabled={isSeeding}
+                className="px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors text-lg"
+              >
+                {isSeeding ? "Loading…" : "Load sample questions"}
+              </button>
+              <button
+                onClick={() => setCurrentExam(null)}
+                className="ml-4 px-6 py-4 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Back
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="text-6xl mb-4">📝</div>
+              <h2 className="text-2xl font-bold mb-4">Your Mock Exam is Ready!</h2>
+              <p className="text-gray-600 mb-6">
+                Duration: {userProfile.examType === "JAMB" ? "3 hours" : "2 hours"} | 
+                Questions: {examQuestions?.length ?? "…"} | Subjects: {selectedSubjects.join(", ")}
+              </p>
+              
+              <div className="bg-yellow-50 p-4 rounded-lg mb-6">
+                <h3 className="font-semibold text-yellow-900 mb-2">⚠️ Important Instructions</h3>
+                <ul className="text-yellow-800 text-sm text-left space-y-1">
+                  <li>• Once started, the timer cannot be paused</li>
+                  <li>• You can navigate between questions freely</li>
+                  <li>• Make sure you have a stable internet connection</li>
+                  <li>• Your progress will be automatically saved</li>
+                </ul>
+              </div>
 
-          <button
-            onClick={handleStartExam}
-            className="px-8 py-4 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-lg"
-          >
-            🚀 Start Mock Exam
-          </button>
+              <button
+                onClick={handleStartExam}
+                disabled={!examQuestions || examQuestions.length === 0}
+                className="px-8 py-4 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors text-lg"
+              >
+                🚀 Start Mock Exam
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
