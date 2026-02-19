@@ -34,7 +34,7 @@ export function Dashboard() {
   const renderContent = () => {
     switch (activeTab) {
       case "home":
-        return <HomeContent userProfile={userProfile} testHistory={testHistory || []} />;
+        return <HomeContent userProfile={userProfile} testHistory={testHistory || []} onNavigate={setActiveTab} />;
       case "scanner":
         return <QuestionScanner />;
       case "mock-exams":
@@ -46,7 +46,7 @@ export function Dashboard() {
       case "progress":
         return <ProgressDashboard userProfile={userProfile} />;
       default:
-        return <HomeContent userProfile={userProfile} testHistory={testHistory || []} />;
+        return <HomeContent userProfile={userProfile} testHistory={testHistory || []} onNavigate={setActiveTab} />;
     }
   };
 
@@ -80,7 +80,7 @@ export function Dashboard() {
   );
 }
 
-function HomeContent({ userProfile, testHistory }: { userProfile: any; testHistory: any[] }) {
+function HomeContent({ userProfile, testHistory, onNavigate }: { userProfile: any; testHistory: any[]; onNavigate: (tab: TabType) => void }) {
   const recentTests = testHistory.slice(0, 3);
   const averageScore = testHistory.length > 0 
     ? Math.round(testHistory.reduce((sum, test) => sum + test.score, 0) / testHistory.length)
@@ -123,7 +123,10 @@ function HomeContent({ userProfile, testHistory }: { userProfile: any; testHisto
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Quick Actions</h2>
           <div className="space-y-3">
-            <button className="w-full p-4 bg-blue-50 hover:bg-blue-100 rounded-lg text-left transition-colors">
+            <button 
+              onClick={() => onNavigate("scanner")}
+              className="w-full p-4 bg-blue-50 hover:bg-blue-100 rounded-lg text-left transition-colors"
+            >
               <div className="flex items-center gap-3">
                 <span className="text-2xl">📸</span>
                 <div>
@@ -132,7 +135,10 @@ function HomeContent({ userProfile, testHistory }: { userProfile: any; testHisto
                 </div>
               </div>
             </button>
-            <button className="w-full p-4 bg-green-50 hover:bg-green-100 rounded-lg text-left transition-colors">
+            <button 
+              onClick={() => onNavigate("mock-exams")}
+              className="w-full p-4 bg-green-50 hover:bg-green-100 rounded-lg text-left transition-colors"
+            >
               <div className="flex items-center gap-3">
                 <span className="text-2xl">🎯</span>
                 <div>
@@ -141,7 +147,10 @@ function HomeContent({ userProfile, testHistory }: { userProfile: any; testHisto
                 </div>
               </div>
             </button>
-            <button className="w-full p-4 bg-purple-50 hover:bg-purple-100 rounded-lg text-left transition-colors">
+            <button 
+              onClick={() => onNavigate("challenges")}
+              className="w-full p-4 bg-purple-50 hover:bg-purple-100 rounded-lg text-left transition-colors"
+            >
               <div className="flex items-center gap-3">
                 <span className="text-2xl">🏆</span>
                 <div>
