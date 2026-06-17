@@ -5,6 +5,7 @@ import { SignOutButton } from "./SignOutButton";
 import { Toaster } from "sonner";
 import { Dashboard } from "./components/Dashboard";
 import { OnboardingForm } from "./components/OnboardingForm";
+import { LandingValueProposition } from "./components/LandingValueProposition";
 
 export default function App() {
   return (
@@ -91,6 +92,8 @@ function Content() {
               <p className="text-sm text-gray-600">Compete nationwide and win prizes</p>
             </div>
           </div>
+
+          <LandingValueProposition />
 
           <div className="max-w-md mx-auto">
             <SignInForm />

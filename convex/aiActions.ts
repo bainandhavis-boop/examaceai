@@ -147,7 +147,7 @@ export const processPdfPastQuestions = action({
     startYear: v.optional(v.number()),
     endYear: v.optional(v.number()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<{ count: number; total: number }> => {
     if (!args.year && (!args.startYear || !args.endYear)) {
       throw new Error("Either provide a single year or both startYear and endYear");
     }
@@ -173,12 +173,7 @@ export const processPdfPastQuestions = action({
         const parser = new pdfModule.PDFParse({ data: buffer });
         result = await parser.getText();
         await parser.destroy();
-      } 
-      // Fallback for v1 or other formats
-      else if (typeof pdfModule.default === "function") {
-        result = await pdfModule.default(buffer);
-      } 
-      else {
+      } else {
         throw new Error("pdf-parse module format not recognized. Expected PDFParse class.");
       }
       
@@ -191,7 +186,7 @@ export const processPdfPastQuestions = action({
       throw new Error("Could not extract text from PDF. It may be scanned/image-based. Try converting pages to images and use Snap & Solve.");
     }
 
-    const yearRange = args.startYear && args.endYear 
+    const yearRangePrompt = args.startYear && args.endYear 
       ? `This PDF contains questions from ${args.startYear} to ${args.endYear}. Try to identify the year for each question from context (e.g., "JAMB 2015", "2020", etc.). If you cannot determine the year, assign it evenly across the range.`
       : args.year 
         ? `All questions are from year ${args.year}.`
@@ -200,7 +195,7 @@ export const processPdfPastQuestions = action({
     const prompt = `You are ExamAce AI. Extract ALL exam questions from this Nigerian past questions PDF text.
 Format each question as JSON. Return ONLY a valid JSON array, no other text.
 
-${yearRange}
+${yearRangePrompt}
 
 Each object must have:
 - questionText: string (the question)
@@ -252,7 +247,7 @@ Return the JSON array of questions:`;
     const defaultYear = args.year ?? args.endYear ?? new Date().getFullYear();
     const startYear = args.startYear ?? defaultYear;
     const endYear = args.endYear ?? defaultYear;
-    const yearRange = endYear - startYear + 1;
+    const yearSpan = endYear - startYear + 1;
 
     const questions = parsed
       .filter((q) => q.questionText && Array.isArray(q.options) && q.options.length >= 2 && q.correctAnswer)
@@ -260,7 +255,7 @@ Return the JSON array of questions:`;
         let questionYear = q.year;
         if (!questionYear || questionYear < startYear || questionYear > endYear) {
           if (args.startYear && args.endYear) {
-            questionYear = startYear + (index % yearRange);
+            questionYear = startYear + (index % yearSpan);
           } else {
             questionYear = defaultYear;
           }
@@ -276,7 +271,7 @@ Return the JSON array of questions:`;
         };
       });
 
-    const count = await ctx.runMutation(internal.examFunctions.addQuestionsFromPdfWithYears, {
+    const count: number = await ctx.runMutation(internal.examFunctions.addQuestionsFromPdfWithYears, {
       examType: args.examType,
       subject: args.subject,
       questions,
