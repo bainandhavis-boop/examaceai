@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
+import { EXAM_DURATION_MINUTES, type ExamType } from "../lib/examTypes";
 
 export function MockExamGenerator({ userProfile }: { userProfile: any }) {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -53,7 +54,8 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
     }
 
     setExamStarted(true);
-    setTimeLeft(userProfile.examType === "JAMB" ? 180 * 60 : 120 * 60); // 3 hours for JAMB, 2 for others
+    const durationSeconds = EXAM_DURATION_MINUTES[userProfile.examType as ExamType] * 60;
+    setTimeLeft(durationSeconds);
     
     // Start countdown timer
     const timer = setInterval(() => {
@@ -88,7 +90,7 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
       const result = await submitTest({
         mockExamId: currentExam._id,
         answers: examAnswers,
-        totalTimeSpent: (userProfile.examType === "JAMB" ? 180 * 60 : 120 * 60) - (timeLeft || 0),
+        totalTimeSpent: EXAM_DURATION_MINUTES[userProfile.examType as ExamType] * 60 - (timeLeft || 0),
       });
 
       setExamResult(result);
@@ -355,7 +357,7 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
               <div className="text-6xl mb-4">📝</div>
               <h2 className="text-2xl font-bold mb-4">Your Mock Exam is Ready!</h2>
               <p className="text-gray-600 mb-6">
-                Duration: {userProfile.examType === "JAMB" ? "3 hours" : "2 hours"} | 
+                Duration: {EXAM_DURATION_MINUTES[userProfile.examType as ExamType] / 60} hours | 
                 Questions: {examQuestions?.length ?? "…"} | Subjects: {selectedSubjects.join(", ")}
               </p>
               

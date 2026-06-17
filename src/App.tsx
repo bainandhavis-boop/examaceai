@@ -55,7 +55,7 @@ function Content() {
               Your AI-Powered Nigerian Exam Preparation Platform
             </p>
             <p className="text-lg text-gray-500">
-              Master JAMB, WAEC, ICAN, TRCN & More with Smart AI Technology
+              Master JAMB, WAEC & NECO with Smart AI Technology
             </p>
           </div>
           

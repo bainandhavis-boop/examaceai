@@ -102,7 +102,7 @@ export const seedSampleQuestions = mutation({
 
     // Create a sample weekly challenge
     const challengeId = await ctx.db.insert("weeklyChallenge", {
-      title: "National JAMB Battle - Week 1",
+      title: "National Exam Battle - Week 1",
       description: "Test your knowledge across Physics, Mathematics, Chemistry, and English. Top 10 winners get digital badges!",
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],

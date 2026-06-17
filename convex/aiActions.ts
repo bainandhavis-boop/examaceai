@@ -4,6 +4,7 @@ import { action } from "./_generated/server";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import OpenAI from "openai";
+import { examTypeValidator } from "./examTypes";
 
 const openai = new OpenAI({
   baseURL: process.env.CONVEX_OPENAI_BASE_URL,
@@ -106,7 +107,7 @@ export const generateLiteratureExplanation = action({
   },
   handler: async (ctx, args) => {
     try {
-      const prompt = `You are ExamAce AI, a Nigerian literature tutor. Explain "${args.bookTitle}"${args.chapter ? ` - Chapter: ${args.chapter}` : ''}${args.topic ? ` - Topic: ${args.topic}` : ''} in simple, clear language suitable for JAMB and WAEC students.
+      const prompt = `You are ExamAce AI, a Nigerian literature tutor. Explain "${args.bookTitle}"${args.chapter ? ` - Chapter: ${args.chapter}` : ''}${args.topic ? ` - Topic: ${args.topic}` : ''} in simple, clear language suitable for JAMB, WAEC, and NECO students.
 
 Include:
 1. Plot summary (if applicable)
@@ -141,7 +142,7 @@ Keep explanations simple and relatable to Nigerian students.`;
 export const processPdfPastQuestions = action({
   args: {
     pdfStorageId: v.id("_storage"),
-    examType: v.union(v.literal("JAMB"), v.literal("WAEC"), v.literal("ICAN"), v.literal("TRCN")),
+    examType: examTypeValidator,
     subject: v.string(),
     year: v.optional(v.number()),
     startYear: v.optional(v.number()),

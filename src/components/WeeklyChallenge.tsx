@@ -193,7 +193,7 @@ export function WeeklyChallenge() {
       <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold mb-2">🏆 National JAMB Battle - Week 1</h2>
+            <h2 className="text-2xl font-bold mb-2">🏆 National Exam Battle - Week 1</h2>
             <p className="opacity-90 mb-4">
               Test your knowledge across Mathematics, Physics, Chemistry, and English. 
               Top 10 winners get digital badges!

@@ -2,6 +2,7 @@ import { query, mutation, action, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api, internal } from "./_generated/api";
+import { examTypeValidator, EXAM_DURATION_MINUTES } from "./examTypes";
 
 // Get user profile
 export const getUserProfile = query({
@@ -22,7 +23,7 @@ export const getUserProfile = query({
 // Create or update user profile
 export const createUserProfile = mutation({
   args: {
-    examType: v.union(v.literal("JAMB"), v.literal("WAEC"), v.literal("ICAN"), v.literal("TRCN")),
+    examType: examTypeValidator,
     targetYear: v.number(),
     subjects: v.array(v.string()),
   },
@@ -61,7 +62,7 @@ export const createUserProfile = mutation({
 // Get questions for practice
 export const getQuestions = query({
   args: {
-    examType: v.union(v.literal("JAMB"), v.literal("WAEC"), v.literal("ICAN"), v.literal("TRCN")),
+    examType: examTypeValidator,
     subject: v.string(),
     limit: v.optional(v.number()),
   },
@@ -105,7 +106,7 @@ export const generateUploadUrl = mutation({
 // Generate predictive mock exam
 export const generatePredictiveMockExam = mutation({
   args: {
-    examType: v.union(v.literal("JAMB"), v.literal("WAEC"), v.literal("ICAN"), v.literal("TRCN")),
+    examType: examTypeValidator,
     subjects: v.array(v.string()),
   },
   handler: async (ctx, args) => {
@@ -129,7 +130,7 @@ export const generatePredictiveMockExam = mutation({
       examType: args.examType,
       subjects: args.subjects,
       questionIds: allQuestions,
-      duration: args.examType === "JAMB" ? 180 : 120, // 3 hours for JAMB, 2 for others
+      duration: EXAM_DURATION_MINUTES[args.examType],
       isPredictive: true,
       createdBy: "AI",
     });
@@ -299,7 +300,7 @@ export const getWeeklyLeaderboard = query({
 // Internal mutation to add questions extracted from PDF
 export const addQuestionsFromPdf = internalMutation({
   args: {
-    examType: v.union(v.literal("JAMB"), v.literal("WAEC"), v.literal("ICAN"), v.literal("TRCN")),
+    examType: examTypeValidator,
     subject: v.string(),
     year: v.number(),
     questions: v.array(v.object({
@@ -334,7 +335,7 @@ export const addQuestionsFromPdf = internalMutation({
 // Internal mutation to add questions with per-question year assignment (for year ranges)
 export const addQuestionsFromPdfWithYears = internalMutation({
   args: {
-    examType: v.union(v.literal("JAMB"), v.literal("WAEC"), v.literal("ICAN"), v.literal("TRCN")),
+    examType: examTypeValidator,
     subject: v.string(),
     questions: v.array(v.object({
       questionText: v.string(),

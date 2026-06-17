@@ -11,6 +11,7 @@
 import type * as aiActions from "../aiActions.js";
 import type * as auth from "../auth.js";
 import type * as examFunctions from "../examFunctions.js";
+import type * as examTypes from "../examTypes.js";
 import type * as http from "../http.js";
 import type * as router from "../router.js";
 import type * as seedData from "../seedData.js";
@@ -25,6 +26,7 @@ declare const fullApi: ApiFromModules<{
   aiActions: typeof aiActions;
   auth: typeof auth;
   examFunctions: typeof examFunctions;
+  examTypes: typeof examTypes;
   http: typeof http;
   router: typeof router;
   seedData: typeof seedData;

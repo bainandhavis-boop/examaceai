@@ -15,7 +15,7 @@ export function LiteratureTutor() {
   const literatureContent = useQuery(api.examFunctions.getLiteratureContent);
   const generateExplanation = useAction(api.aiActions.generateLiteratureExplanation);
 
-  // Popular JAMB/WAEC literature books
+  // Popular JAMB, WAEC, and NECO literature books
   const popularBooks = [
     "The Life Changer - Khadija Abubakar Jalli",
     "Purple Hibiscus - Chimamanda Ngozi Adichie",
@@ -224,7 +224,7 @@ export function LiteratureTutor() {
 
       {/* Popular texts showcase */}
       <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">📖 Popular JAMB/WAEC Literature Texts</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">📖 Popular JAMB, WAEC & NECO Literature Texts</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {popularBooks.slice(0, 6).map((book) => (
             <div key={book} className="bg-white p-4 rounded-lg shadow-sm">
@@ -274,7 +274,7 @@ export function LiteratureTutor() {
               <span className="text-green-600">✓</span>
               <div>
                 <h4 className="font-medium">Exam-Focused Content</h4>
-                <p className="text-sm text-gray-600">Tailored for JAMB and WAEC requirements</p>
+                <p className="text-sm text-gray-600">Tailored for JAMB, WAEC, and NECO requirements</p>
               </div>
             </div>
             <div className="flex items-start gap-3">

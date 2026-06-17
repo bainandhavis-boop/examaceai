@@ -33,7 +33,7 @@ export function LandingValueProposition() {
         </h2>
         <p className="text-base md:text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto mb-8">
           Get instant step-by-step solutions, practice predictive mock exams, listen to
-          literature summaries, and prepare smarter for JAMB, WAEC, NECO and more.
+          literature summaries, and prepare smarter for JAMB, WAEC, and NECO.
         </p>
         <button
           type="button"

@@ -1,12 +1,13 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { authTables } from "@convex-dev/auth/server";
+import { examTypeValidator } from "./examTypes";
 
 const applicationTables = {
   // User profiles and progress
   userProfiles: defineTable({
     userId: v.id("users"),
-    examType: v.union(v.literal("JAMB"), v.literal("WAEC"), v.literal("ICAN"), v.literal("TRCN")),
+    examType: examTypeValidator,
     targetYear: v.number(),
     subjects: v.array(v.string()),
     totalPoints: v.number(),
@@ -18,7 +19,7 @@ const applicationTables = {
 
   // Questions database
   questions: defineTable({
-    examType: v.union(v.literal("JAMB"), v.literal("WAEC"), v.literal("ICAN"), v.literal("TRCN")),
+    examType: examTypeValidator,
     subject: v.string(),
     year: v.number(),
     questionText: v.string(),
@@ -35,7 +36,7 @@ const applicationTables = {
   // Mock exams
   mockExams: defineTable({
     title: v.string(),
-    examType: v.union(v.literal("JAMB"), v.literal("WAEC"), v.literal("ICAN"), v.literal("TRCN")),
+    examType: examTypeValidator,
     subjects: v.array(v.string()),
     questionIds: v.array(v.id("questions")),
     duration: v.number(), // in minutes
@@ -98,7 +99,7 @@ const applicationTables = {
   literatureContent: defineTable({
     title: v.string(),
     author: v.string(),
-    examType: v.union(v.literal("JAMB"), v.literal("WAEC")),
+    examType: examTypeValidator,
     chapters: v.array(v.object({
       title: v.string(),
       content: v.string(),

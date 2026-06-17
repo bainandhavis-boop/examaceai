@@ -2,36 +2,10 @@ import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
-
-const EXAM_TYPES = [
-  { value: "JAMB", label: "JAMB (Joint Admissions and Matriculation Board)" },
-  { value: "WAEC", label: "WAEC (West African Examinations Council)" },
-  { value: "ICAN", label: "ICAN (Institute of Chartered Accountants)" },
-  { value: "TRCN", label: "TRCN (Teachers Registration Council)" },
-];
-
-const SUBJECTS_BY_EXAM = {
-  JAMB: [
-    "Mathematics", "English Language", "Physics", "Chemistry", "Biology",
-    "Economics", "Government", "Literature in English", "Geography", "History"
-  ],
-  WAEC: [
-    "Mathematics", "English Language", "Physics", "Chemistry", "Biology",
-    "Economics", "Government", "Literature in English", "Geography", "History",
-    "Further Mathematics", "Agricultural Science", "Commerce", "Accounting"
-  ],
-  ICAN: [
-    "Financial Accounting", "Management Accounting", "Audit and Assurance",
-    "Taxation", "Financial Management", "Business Law"
-  ],
-  TRCN: [
-    "Educational Psychology", "Curriculum and Instruction", "Educational Administration",
-    "Measurement and Evaluation", "Philosophy of Education"
-  ]
-};
+import { EXAM_TYPES, SUBJECTS_BY_EXAM, type ExamType } from "../lib/examTypes";
 
 export function OnboardingForm() {
-  const [examType, setExamType] = useState<"JAMB" | "WAEC" | "ICAN" | "TRCN">("JAMB");
+  const [examType, setExamType] = useState<ExamType>("JAMB");
   const [targetYear, setTargetYear] = useState(2026);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,6 +18,11 @@ export function OnboardingForm() {
         ? prev.filter(s => s !== subject)
         : [...prev, subject]
     );
+  };
+
+  const handleExamTypeChange = (value: ExamType) => {
+    setExamType(value);
+    setSelectedSubjects([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,7 +53,7 @@ export function OnboardingForm() {
     <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-8">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome to ExamAce AI!</h2>
-        <p className="text-gray-600">Let's set up your personalized exam preparation journey</p>
+        <p className="text-gray-600">Set up your JAMB, WAEC, or NECO preparation journey</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -90,7 +69,7 @@ export function OnboardingForm() {
                   name="examType"
                   value={exam.value}
                   checked={examType === exam.value}
-                  onChange={(e) => setExamType(e.target.value as any)}
+                  onChange={() => handleExamTypeChange(exam.value)}
                   className="mr-3 text-blue-600"
                 />
                 <div>

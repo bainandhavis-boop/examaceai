@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-ExamAce AI is an AI-powered platform designed to help Nigerian students prepare for various examinations, including JAMB, WAEC, ICAN, and TRCN. The platform leverages AI for features such as question scanning and solving, generating predictive mock exams, providing voice-based literature explanations, and hosting weekly challenges. It aims to provide a comprehensive and interactive learning experience.
+ExamAce AI is an AI-powered platform designed to help Nigerian students prepare for JAMB, WAEC, and NECO examinations. The platform leverages AI for features such as question scanning and solving, generating predictive mock exams, providing voice-based literature explanations, and hosting weekly challenges. It aims to provide a comprehensive and interactive learning experience.
 
 ## Technologies Used
 

@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
+import { EXAM_TYPES, type ExamType } from "../lib/examTypes";
 
 export function QuestionScanner() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -11,7 +12,7 @@ export function QuestionScanner() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedPdf, setSelectedPdf] = useState<File | null>(null);
-  const [pdfExamType, setPdfExamType] = useState<"JAMB" | "WAEC" | "ICAN" | "TRCN">("JAMB");
+  const [pdfExamType, setPdfExamType] = useState<ExamType>("JAMB");
   const [pdfSubject, setPdfSubject] = useState("Mathematics");
   const [pdfYear, setPdfYear] = useState(new Date().getFullYear());
   const [useYearRange, setUseYearRange] = useState(false);
@@ -301,7 +302,7 @@ export function QuestionScanner() {
       <div className="border-t pt-8 mt-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Upload Past Questions (PDF)</h2>
         <p className="text-gray-600 mb-6">
-          Upload a PDF of past questions (JAMB, WAEC, etc.) and we&apos;ll extract the questions into your question bank for mock exams.
+          Upload a PDF of past questions (JAMB, WAEC, NECO) and we&apos;ll extract the questions into your question bank for mock exams.
         </p>
         <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-6">
           <input
@@ -322,13 +323,14 @@ export function QuestionScanner() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Exam Type</label>
                     <select
                       value={pdfExamType}
-                      onChange={(e) => setPdfExamType(e.target.value as typeof pdfExamType)}
+                      onChange={(e) => setPdfExamType(e.target.value as ExamType)}
                       className="w-full p-2 border border-gray-300 rounded-lg"
                     >
-                      <option value="JAMB">JAMB</option>
-                      <option value="WAEC">WAEC</option>
-                      <option value="ICAN">ICAN</option>
-                      <option value="TRCN">TRCN</option>
+                      {EXAM_TYPES.map((exam) => (
+                        <option key={exam.value} value={exam.value}>
+                          {exam.value}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div>
