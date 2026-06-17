@@ -8,6 +8,37 @@ import { OnboardingForm } from "./components/OnboardingForm";
 import { LandingValueProposition } from "./components/LandingValueProposition";
 import { LandingHowItWorks } from "./components/LandingHowItWorks";
 
+const LANDING_FEATURES = [
+  {
+    icon: "📸",
+    iconBg: "bg-blue-100",
+    title: "Snap & Solve",
+    description:
+      "Upload any exam question and receive detailed step-by-step explanations.",
+  },
+  {
+    icon: "🎯",
+    iconBg: "bg-green-100",
+    title: "Predictive Exams",
+    description:
+      "Practice with AI-generated mock exams based on historical exam trends.",
+  },
+  {
+    icon: "🎧",
+    iconBg: "bg-purple-100",
+    title: "Voice Literature",
+    description:
+      "Listen to simple audio explanations of prescribed literature texts.",
+  },
+  {
+    icon: "🏆",
+    iconBg: "bg-orange-100",
+    title: "Weekly Battles",
+    description:
+      "Compete with students nationwide and climb the leaderboard.",
+  },
+] as const;
+
 export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-green-50">
@@ -61,37 +92,26 @@ function Content() {
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 max-w-4xl mx-auto">
-            <div className="bg-white p-6 rounded-xl shadow-lg">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                <span className="text-2xl">📸</span>
+            {LANDING_FEATURES.map((feature) => (
+              <div
+                key={feature.title}
+                className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center text-center"
+              >
+                <div
+                  className={`w-12 h-12 ${feature.iconBg} rounded-lg flex items-center justify-center mb-4`}
+                >
+                  <span className="text-2xl" aria-hidden="true">
+                    {feature.icon}
+                  </span>
+                </div>
+                <h3 className="text-base font-semibold text-gray-900 mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  {feature.description}
+                </p>
               </div>
-              <h3 className="font-semibold mb-2">Snap & Solve</h3>
-              <p className="text-sm text-gray-600">Take photos of questions and get instant AI solutions</p>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-lg">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                <span className="text-2xl">🎯</span>
-              </div>
-              <h3 className="font-semibold mb-2">Predictive Exams</h3>
-              <p className="text-sm text-gray-600">AI-generated mock exams based on exam patterns</p>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-lg">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                <span className="text-2xl">🎧</span>
-              </div>
-              <h3 className="font-semibold mb-2">Voice Literature</h3>
-              <p className="text-sm text-gray-600">Audio explanations of prescribed texts</p>
-            </div>
-            
-            <div className="bg-white p-6 rounded-xl shadow-lg">
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                <span className="text-2xl">🏆</span>
-              </div>
-              <h3 className="font-semibold mb-2">Weekly Battles</h3>
-              <p className="text-sm text-gray-600">Compete nationwide and win prizes</p>
-            </div>
+            ))}
           </div>
 
           <LandingValueProposition />
