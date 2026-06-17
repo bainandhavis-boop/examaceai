@@ -69,9 +69,18 @@ export function SignInForm() {
         <span className="mx-4 text-secondary">or</span>
         <hr className="my-4 grow border-gray-200" />
       </div>
-      <button className="auth-button" onClick={() => void signIn("anonymous")}>
-        Sign in anonymously
-      </button>
+      <div className="text-center">
+        <p className="text-sm text-gray-600 mb-3 leading-relaxed">
+          Want to explore first? Start using ExamAce AI without creating an account.
+        </p>
+        <button
+          type="button"
+          className="auth-button"
+          onClick={() => void signIn("anonymous")}
+        >
+          Try Instantly No Registration Required
+        </button>
+      </div>
     </div>
   );
 }
