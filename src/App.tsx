@@ -117,11 +117,15 @@ function Content() {
 
           <LandingSupportedExams />
 
-          <LandingValueProposition />
+          <LandingValueProposition
+            onTryOwnQuestion={() => {
+              document.getElementById("sign-in")?.scrollIntoView({ behavior: "smooth" });
+            }}
+          />
 
           <LandingHowItWorks />
 
-          <div className="max-w-md mx-auto">
+          <div id="sign-in" className="max-w-md mx-auto scroll-mt-24">
             <SignInForm />
           </div>
         </div>
