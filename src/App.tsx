@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import { Dashboard } from "./components/Dashboard";
 import { OnboardingForm } from "./components/OnboardingForm";
 import { LandingValueProposition } from "./components/LandingValueProposition";
+import { LandingHowItWorks } from "./components/LandingHowItWorks";
 
 export default function App() {
   return (
@@ -94,6 +95,8 @@ function Content() {
           </div>
 
           <LandingValueProposition />
+
+          <LandingHowItWorks />
 
           <div className="max-w-md mx-auto">
             <SignInForm />
