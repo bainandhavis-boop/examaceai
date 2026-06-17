@@ -7,6 +7,7 @@ import { Dashboard } from "./components/Dashboard";
 import { OnboardingForm } from "./components/OnboardingForm";
 import { LandingValueProposition } from "./components/LandingValueProposition";
 import { LandingHowItWorks } from "./components/LandingHowItWorks";
+import { LandingSupportedExams } from "./components/LandingSupportedExams";
 
 const LANDING_FEATURES = [
   {
@@ -113,6 +114,8 @@ function Content() {
               </div>
             ))}
           </div>
+
+          <LandingSupportedExams />
 
           <LandingValueProposition />
 
