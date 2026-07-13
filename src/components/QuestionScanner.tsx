@@ -3,10 +3,21 @@ import { useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
 import { EXAM_TYPES, type ExamType } from "../lib/examTypes";
+import {
+  AiLoadingButtonContent,
+  AiLoadingState,
+} from "./AiLoadingState";
+import { useAiLoadingPhase } from "../hooks/useAiLoadingPhase";
 
 export function QuestionScanner() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const {
+    phase: analyzePhase,
+    isLoading: isAnalyzing,
+    startAnalyzing,
+    startGenerating,
+    stop: stopAnalyzing,
+  } = useAiLoadingPhase();
   const [result, setResult] = useState<any>(null);
   const [subject, setSubject] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -18,7 +29,13 @@ export function QuestionScanner() {
   const [useYearRange, setUseYearRange] = useState(false);
   const [pdfStartYear, setPdfStartYear] = useState(2000);
   const [pdfEndYear, setPdfEndYear] = useState(new Date().getFullYear());
-  const [isProcessingPdf, setIsProcessingPdf] = useState(false);
+  const {
+    phase: pdfPhase,
+    isLoading: isPdfLoading,
+    startAnalyzing: startPdfAnalyzing,
+    startGenerating: startPdfGenerating,
+    stop: stopPdfLoading,
+  } = useAiLoadingPhase();
   const [pdfResult, setPdfResult] = useState<{ count: number } | null>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
 
@@ -49,12 +66,10 @@ export function QuestionScanner() {
       return;
     }
 
-    setIsAnalyzing(true);
+    startAnalyzing();
     try {
-      // Step 1: Get upload URL
       const uploadUrl = await generateUploadUrl();
 
-      // Step 2: Upload image
       const uploadResult = await fetch(uploadUrl, {
         method: "POST",
         headers: { "Content-Type": selectedImage.type },
@@ -67,7 +82,7 @@ export function QuestionScanner() {
 
       const { storageId } = await uploadResult.json();
 
-      // Step 3: Analyze with AI
+      startGenerating();
       const analysisResult = await analyzeQuestion({
         imageId: storageId,
         subject: subject || undefined,
@@ -79,7 +94,7 @@ export function QuestionScanner() {
       console.error("Analysis error:", error);
       toast.error("Failed to analyze question. Please try again.");
     } finally {
-      setIsAnalyzing(false);
+      stopAnalyzing();
     }
   };
 
@@ -125,7 +140,7 @@ export function QuestionScanner() {
         return;
       }
     }
-    setIsProcessingPdf(true);
+    startPdfAnalyzing();
     setPdfResult(null);
     try {
       const uploadUrl = await generateUploadUrl();
@@ -136,6 +151,8 @@ export function QuestionScanner() {
       });
       if (!uploadResult.ok) throw new Error("Failed to upload PDF");
       const { storageId } = await uploadResult.json();
+
+      startPdfGenerating();
       const res = await processPdf({
         pdfStorageId: storageId,
         examType: pdfExamType,
@@ -150,7 +167,7 @@ export function QuestionScanner() {
       console.error(err);
       toast.error(err instanceof Error ? err.message : "Failed to process PDF");
     } finally {
-      setIsProcessingPdf(false);
+      stopPdfLoading();
     }
   };
 
@@ -198,13 +215,15 @@ export function QuestionScanner() {
           />
           <button
             onClick={handleTakePhoto}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            disabled={isAnalyzing}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             📷 Take Photo
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            disabled={isAnalyzing}
+            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             📁 Upload Image
           </button>
@@ -220,7 +239,8 @@ export function QuestionScanner() {
           <select
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            disabled={isAnalyzing}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <option value="">Auto-detect subject</option>
             {subjects.map((subj) => (
@@ -228,16 +248,23 @@ export function QuestionScanner() {
             ))}
           </select>
 
+          {isAnalyzing && analyzePhase && (
+            <AiLoadingState phase={analyzePhase} />
+          )}
+
           <button
             onClick={handleAnalyze}
             disabled={isAnalyzing}
             className="w-full py-3 bg-gradient-to-r from-blue-600 to-green-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
-            {isAnalyzing ? (
-              <div className="flex items-center justify-center gap-2">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                Analyzing Question...
-              </div>
+            {isAnalyzing && analyzePhase ? (
+              <AiLoadingButtonContent
+                label={
+                  analyzePhase === "analyzing"
+                    ? "Analyzing Question..."
+                    : "Generating Solution..."
+                }
+              />
             ) : (
               "🤖 Analyze with AI"
             )}
@@ -324,7 +351,8 @@ export function QuestionScanner() {
                     <select
                       value={pdfExamType}
                       onChange={(e) => setPdfExamType(e.target.value as ExamType)}
-                      className="w-full p-2 border border-gray-300 rounded-lg"
+                      disabled={isPdfLoading}
+                      className="w-full p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {EXAM_TYPES.map((exam) => (
                         <option key={exam.value} value={exam.value}>
@@ -338,7 +366,8 @@ export function QuestionScanner() {
                     <select
                       value={pdfSubject}
                       onChange={(e) => setPdfSubject(e.target.value)}
-                      className="w-full p-2 border border-gray-300 rounded-lg"
+                      disabled={isPdfLoading}
+                      className="w-full p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {subjects.map((s) => (
                         <option key={s} value={s}>{s}</option>
@@ -353,7 +382,8 @@ export function QuestionScanner() {
                     id="useYearRange"
                     checked={useYearRange}
                     onChange={(e) => setUseYearRange(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                    disabled={isPdfLoading}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded disabled:opacity-50"
                   />
                   <label htmlFor="useYearRange" className="text-sm font-medium text-gray-700">
                     This PDF contains questions from multiple years (e.g., 1983-2024)
@@ -368,7 +398,8 @@ export function QuestionScanner() {
                         type="number"
                         value={pdfStartYear}
                         onChange={(e) => setPdfStartYear(parseInt(e.target.value, 10) || pdfStartYear)}
-                        className="w-full p-2 border border-gray-300 rounded-lg"
+                        className="w-full p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={isPdfLoading}
                         min={1980}
                         max={2030}
                       />
@@ -379,7 +410,8 @@ export function QuestionScanner() {
                         type="number"
                         value={pdfEndYear}
                         onChange={(e) => setPdfEndYear(parseInt(e.target.value, 10) || pdfEndYear)}
-                        className="w-full p-2 border border-gray-300 rounded-lg"
+                        className="w-full p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={isPdfLoading}
                         min={1980}
                         max={2030}
                       />
@@ -392,27 +424,48 @@ export function QuestionScanner() {
                       type="number"
                       value={pdfYear}
                       onChange={(e) => setPdfYear(parseInt(e.target.value, 10) || pdfYear)}
-                      className="w-full p-2 border border-gray-300 rounded-lg"
+                      className="w-full p-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={isPdfLoading}
                       min={1990}
                       max={2030}
                     />
                   </div>
                 )}
               </div>
+              {isPdfLoading && pdfPhase && (
+                <AiLoadingState
+                  phase={pdfPhase}
+                  labels={{
+                    analyzing: "Analyzing PDF...",
+                    generating: "Extracting Questions...",
+                  }}
+                />
+              )}
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={handleProcessPdf}
-                  disabled={isProcessingPdf}
-                  className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50"
+                  disabled={isPdfLoading}
+                  className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isProcessingPdf ? "Processing…" : "Extract & Add Questions"}
+                  {isPdfLoading && pdfPhase ? (
+                    <AiLoadingButtonContent
+                      label={
+                        pdfPhase === "analyzing"
+                          ? "Analyzing PDF..."
+                          : "Extracting Questions..."
+                      }
+                    />
+                  ) : (
+                    "Extract & Add Questions"
+                  )}
                 </button>
                 <button
                   onClick={() => {
                     setSelectedPdf(null);
                     pdfInputRef.current?.value && (pdfInputRef.current.value = "");
                   }}
-                  className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  disabled={isPdfLoading}
+                  className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Change file
                 </button>

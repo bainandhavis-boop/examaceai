@@ -1,13 +1,29 @@
 import { useState } from "react";
-import { useMutation, useQuery, useAction } from "convex/react";
+import { useQuery, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
+import {
+  AiLoadingButtonContent,
+  AiLoadingState,
+} from "./AiLoadingState";
+import { useAiLoadingPhase } from "../hooks/useAiLoadingPhase";
+
+const LITERATURE_LOADING_LABELS = {
+  analyzing: "Analyzing Text...",
+  generating: "Generating Explanation...",
+} as const;
 
 export function LiteratureTutor() {
   const [selectedBook, setSelectedBook] = useState("");
   const [selectedChapter, setSelectedChapter] = useState("");
   const [topic, setTopic] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
+  const {
+    phase: loadingPhase,
+    isLoading: isGenerating,
+    startAnalyzing,
+    startGenerating,
+    stop: stopGenerating,
+  } = useAiLoadingPhase();
   const [explanation, setExplanation] = useState("");
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
@@ -34,8 +50,10 @@ export function LiteratureTutor() {
       return;
     }
 
-    setIsGenerating(true);
+    startAnalyzing();
     try {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      startGenerating();
       const result = await generateExplanation({
         bookTitle: selectedBook,
         chapter: selectedChapter || undefined,
@@ -48,7 +66,7 @@ export function LiteratureTutor() {
       toast.error("Failed to generate explanation. Please try again.");
       console.error(error);
     } finally {
-      setIsGenerating(false);
+      stopGenerating();
     }
   };
 
@@ -106,7 +124,8 @@ export function LiteratureTutor() {
             <select
               value={selectedBook}
               onChange={(e) => setSelectedBook(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              disabled={isGenerating}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="">Select a book...</option>
               {popularBooks.map((book) => (
@@ -125,7 +144,8 @@ export function LiteratureTutor() {
                 value={selectedChapter}
                 onChange={(e) => setSelectedChapter(e.target.value)}
                 placeholder="e.g., Chapter 1, Act 1 Scene 1"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={isGenerating}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
 
@@ -138,21 +158,29 @@ export function LiteratureTutor() {
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 placeholder="e.g., Character analysis, Themes"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={isGenerating}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
           </div>
+
+          {isGenerating && loadingPhase && (
+            <AiLoadingState phase={loadingPhase} labels={LITERATURE_LOADING_LABELS} />
+          )}
 
           <button
             onClick={handleGenerateExplanation}
             disabled={isGenerating || !selectedBook}
             className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
-            {isGenerating ? (
-              <div className="flex items-center justify-center gap-2">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                Generating Explanation...
-              </div>
+            {isGenerating && loadingPhase ? (
+              <AiLoadingButtonContent
+                label={
+                  loadingPhase === "analyzing"
+                    ? LITERATURE_LOADING_LABELS.analyzing
+                    : LITERATURE_LOADING_LABELS.generating
+                }
+              />
             ) : (
               "📚 Generate AI Explanation"
             )}
