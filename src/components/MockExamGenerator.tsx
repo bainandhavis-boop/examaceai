@@ -3,6 +3,15 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
 import { EXAM_DURATION_MINUTES, type ExamType } from "../lib/examTypes";
+import { InlineError } from "./InlineError";
+import {
+  type AppErrorContent,
+  ERROR_MESSAGES,
+  resolveExamError,
+  resolveExamSubmitError,
+  showErrorToast,
+  showValidationToast,
+} from "../lib/errors";
 
 export function MockExamGenerator({ userProfile }: { userProfile: any }) {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -15,6 +24,9 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
   const [examCompleted, setExamCompleted] = useState(false);
   const [examResult, setExamResult] = useState<any>(null);
   const [isSeeding, setIsSeeding] = useState(false);
+  const [generateError, setGenerateError] = useState<AppErrorContent | null>(null);
+  const [submitError, setSubmitError] = useState<AppErrorContent | null>(null);
+  const [seedError, setSeedError] = useState<AppErrorContent | null>(null);
 
   const generateMockExam = useMutation(api.examFunctions.generatePredictiveMockExam);
   const examQuestions = useQuery(
@@ -26,11 +38,15 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
 
   const handleGenerateExam = async () => {
     if (selectedSubjects.length === 0) {
-      toast.error("Please select at least one subject");
+      showValidationToast({
+        title: "No subjects selected.",
+        body: "Please choose at least one subject to generate a mock exam.",
+      });
       return;
     }
 
     setIsGenerating(true);
+    setGenerateError(null);
     try {
       const examId = await generateMockExam({
         examType: userProfile.examType,
@@ -40,7 +56,9 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
       setCurrentExam({ _id: examId });
       toast.success("Mock exam generated! Click Start to begin.");
     } catch (error) {
-      toast.error("Failed to generate exam. Please try again.");
+      const content = resolveExamError(error);
+      setGenerateError(content);
+      showErrorToast(content);
       console.error(error);
     } finally {
       setIsGenerating(false);
@@ -49,7 +67,10 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
 
   const handleStartExam = () => {
     if (!examQuestions || examQuestions.length === 0) {
-      toast.error("No questions available. Load sample questions first, then generate a new exam.");
+      showValidationToast({
+        title: "No questions available.",
+        body: "Load sample questions first, then generate a new mock exam.",
+      });
       return;
     }
 
@@ -87,6 +108,7 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
     }));
 
     try {
+      setSubmitError(null);
       const result = await submitTest({
         mockExamId: currentExam._id,
         answers: examAnswers,
@@ -97,13 +119,16 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
       setExamCompleted(true);
       toast.success(`Exam completed! You scored ${result.score}%`);
     } catch (error) {
-      toast.error("Failed to submit exam. Please try again.");
+      const content = resolveExamSubmitError(error);
+      setSubmitError(content);
+      showErrorToast(content);
       console.error(error);
     }
   };
 
   const handleLoadSampleQuestions = async () => {
     setIsSeeding(true);
+    setSeedError(null);
     try {
       const result = await seedSampleQuestions();
       toast.success(result === "Questions already seeded" ? "Question bank already has questions." : "Sample questions loaded! Generate your mock exam again.");
@@ -111,7 +136,9 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
         setCurrentExam(null);
       }
     } catch (error) {
-      toast.error("Failed to load sample questions.");
+      const content = ERROR_MESSAGES.seedQuestions;
+      setSeedError(content);
+      showErrorToast(content);
       console.error(error);
     } finally {
       setIsSeeding(false);
@@ -236,6 +263,13 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
           </div>
         </div>
 
+        {submitError && (
+          <InlineError
+            {...submitError}
+            onRetry={handleSubmitExam}
+          />
+        )}
+
         {/* Navigation */}
         <div className="flex justify-between">
           <button
@@ -313,6 +347,13 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
               </p>
             </div>
 
+            {generateError && (
+              <InlineError
+                {...generateError}
+                onRetry={handleGenerateExam}
+              />
+            )}
+
             <button
               onClick={handleGenerateExam}
               disabled={isGenerating || selectedSubjects.length === 0}
@@ -338,6 +379,13 @@ export function MockExamGenerator({ userProfile }: { userProfile: any }) {
               <p className="text-gray-600 mb-6">
                 This exam has no questions because there are no questions in the bank yet. Load sample questions below, then generate a new mock exam.
               </p>
+              {seedError && (
+                <InlineError
+                  {...seedError}
+                  onRetry={handleLoadSampleQuestions}
+                  className="mb-6 text-left"
+                />
+              )}
               <button
                 onClick={handleLoadSampleQuestions}
                 disabled={isSeeding}

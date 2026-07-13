@@ -3,12 +3,20 @@ import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
 import { EXAM_TYPES, SUBJECTS_BY_EXAM, type ExamType } from "../lib/examTypes";
+import { InlineError } from "./InlineError";
+import {
+  type AppErrorContent,
+  resolveProfileError,
+  showErrorToast,
+  showValidationToast,
+} from "../lib/errors";
 
 export function OnboardingForm() {
   const [examType, setExamType] = useState<ExamType>("JAMB");
   const [targetYear, setTargetYear] = useState(2026);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<AppErrorContent | null>(null);
 
   const createProfile = useMutation(api.examFunctions.createUserProfile);
 
@@ -25,15 +33,17 @@ export function OnboardingForm() {
     setSelectedSubjects([]);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const saveProfile = async () => {
     if (selectedSubjects.length === 0) {
-      toast.error("Please select at least one subject");
+      showValidationToast({
+        title: "No subjects selected.",
+        body: "Please choose at least one subject to continue.",
+      });
       return;
     }
 
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
       await createProfile({
         examType,
@@ -42,11 +52,18 @@ export function OnboardingForm() {
       });
       toast.success("Profile created successfully! Welcome to ExamAce AI!");
     } catch (error) {
-      toast.error("Failed to create profile. Please try again.");
+      const content = resolveProfileError(error);
+      setSubmitError(content);
+      showErrorToast(content);
       console.error(error);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await saveProfile();
   };
 
   return (
@@ -114,6 +131,14 @@ export function OnboardingForm() {
             ))}
           </div>
         </div>
+
+        {submitError && (
+          <InlineError
+            {...submitError}
+            onRetry={() => void saveProfile()}
+            retryLabel="Try again"
+          />
+        )}
 
         <button
           type="submit"

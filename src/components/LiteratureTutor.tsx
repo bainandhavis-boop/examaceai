@@ -7,6 +7,14 @@ import {
   AiLoadingState,
 } from "./AiLoadingState";
 import { useAiLoadingPhase } from "../hooks/useAiLoadingPhase";
+import { InlineError } from "./InlineError";
+import {
+  type AppErrorContent,
+  ERROR_MESSAGES,
+  resolveLiteratureError,
+  showErrorToast,
+  showValidationToast,
+} from "../lib/errors";
 
 const LITERATURE_LOADING_LABELS = {
   analyzing: "Analyzing Text...",
@@ -25,6 +33,7 @@ export function LiteratureTutor() {
     stop: stopGenerating,
   } = useAiLoadingPhase();
   const [explanation, setExplanation] = useState("");
+  const [explanationError, setExplanationError] = useState<AppErrorContent | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
 
@@ -46,11 +55,15 @@ export function LiteratureTutor() {
 
   const handleGenerateExplanation = async () => {
     if (!selectedBook) {
-      toast.error("Please select a book first");
+      showValidationToast({
+        title: "No book selected.",
+        body: "Please choose a literature text before generating an explanation.",
+      });
       return;
     }
 
     startAnalyzing();
+    setExplanationError(null);
     try {
       await new Promise((resolve) => setTimeout(resolve, 400));
       startGenerating();
@@ -63,7 +76,9 @@ export function LiteratureTutor() {
       setExplanation(result || "");
       toast.success("Explanation generated successfully!");
     } catch (error) {
-      toast.error("Failed to generate explanation. Please try again.");
+      const content = resolveLiteratureError(error);
+      setExplanationError(content);
+      showErrorToast(content);
       console.error(error);
     } finally {
       stopGenerating();
@@ -72,7 +87,10 @@ export function LiteratureTutor() {
 
   const handlePlayAudio = () => {
     if (!explanation) {
-      toast.error("Generate an explanation first");
+      showValidationToast({
+        title: "No explanation yet.",
+        body: "Generate an AI explanation first, then play it as audio.",
+      });
       return;
     }
 
@@ -87,12 +105,17 @@ export function LiteratureTutor() {
       utterance.onend = () => setIsPlaying(false);
       utterance.onerror = () => {
         setIsPlaying(false);
-        toast.error("Audio playback failed");
+        toast.error(ERROR_MESSAGES.audioPlayback.title, {
+          description: ERROR_MESSAGES.audioPlayback.body,
+        });
       };
 
       speechSynthesis.speak(utterance);
     } else {
-      toast.error("Audio playback not supported in this browser");
+      showErrorToast({
+        title: "Audio isn't supported here.",
+        body: "Your browser can't play audio explanations. Please read the text on screen.",
+      });
     }
   };
 
@@ -163,6 +186,13 @@ export function LiteratureTutor() {
               />
             </div>
           </div>
+
+          {explanationError && (
+            <InlineError
+              {...explanationError}
+              onRetry={handleGenerateExplanation}
+            />
+          )}
 
           {isGenerating && loadingPhase && (
             <AiLoadingState phase={loadingPhase} labels={LITERATURE_LOADING_LABELS} />

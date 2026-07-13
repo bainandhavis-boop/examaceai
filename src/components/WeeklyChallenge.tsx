@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
+import { showValidationToast } from "../lib/errors";
 
 export function WeeklyChallenge() {
   const [isParticipating, setIsParticipating] = useState(false);

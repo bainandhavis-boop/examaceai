@@ -8,6 +8,14 @@ import {
   AiLoadingState,
 } from "./AiLoadingState";
 import { useAiLoadingPhase } from "../hooks/useAiLoadingPhase";
+import { InlineError } from "./InlineError";
+import {
+  type AppErrorContent,
+  resolveImageAnalysisError,
+  resolvePdfProcessingError,
+  showErrorToast,
+  showValidationToast,
+} from "../lib/errors";
 
 export function QuestionScanner() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -19,6 +27,7 @@ export function QuestionScanner() {
     stop: stopAnalyzing,
   } = useAiLoadingPhase();
   const [result, setResult] = useState<any>(null);
+  const [analyzeError, setAnalyzeError] = useState<AppErrorContent | null>(null);
   const [subject, setSubject] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -37,6 +46,7 @@ export function QuestionScanner() {
     stop: stopPdfLoading,
   } = useAiLoadingPhase();
   const [pdfResult, setPdfResult] = useState<{ count: number } | null>(null);
+  const [pdfError, setPdfError] = useState<AppErrorContent | null>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const generateUploadUrl = useMutation(api.examFunctions.generateUploadUrl);
@@ -51,22 +61,31 @@ export function QuestionScanner() {
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast.error("Image size should be less than 5MB");
+      if (file.size > 5 * 1024 * 1024) {
+        showValidationToast({
+          title: "Image is too large.",
+          body: "Please choose an image smaller than 5MB.",
+        });
         return;
       }
       setSelectedImage(file);
       setResult(null);
+      setAnalyzeError(null);
     }
   };
 
   const handleAnalyze = async () => {
     if (!selectedImage) {
-      toast.error("Please select an image first");
+      showValidationToast({
+        title: "No image selected.",
+        body: "Please take a photo or upload an image of your question first.",
+      });
       return;
     }
 
     startAnalyzing();
+    setAnalyzeError(null);
+    setResult(null);
     try {
       const uploadUrl = await generateUploadUrl();
 
@@ -92,7 +111,9 @@ export function QuestionScanner() {
       toast.success("Question analyzed successfully!");
     } catch (error) {
       console.error("Analysis error:", error);
-      toast.error("Failed to analyze question. Please try again.");
+      const content = resolveImageAnalysisError(error);
+      setAnalyzeError(content);
+      showErrorToast(content);
     } finally {
       stopAnalyzing();
     }
@@ -108,40 +129,60 @@ export function QuestionScanner() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.type !== "application/pdf") {
-        toast.error("Please select a PDF file");
+        showValidationToast({
+          title: "That file isn't a PDF.",
+          body: "Please select a PDF file of past questions.",
+        });
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
-        toast.error("PDF size should be less than 10MB");
+        showValidationToast({
+          title: "PDF is too large.",
+          body: "Please choose a PDF smaller than 10MB.",
+        });
         return;
       }
       setSelectedPdf(file);
       setPdfResult(null);
+      setPdfError(null);
     }
   };
 
   const handleProcessPdf = async () => {
     if (!selectedPdf) {
-      toast.error("Please select a PDF first");
+      showValidationToast({
+        title: "No PDF selected.",
+        body: "Please upload a PDF of past questions first.",
+      });
       return;
     }
     if (useYearRange) {
       if (pdfStartYear > pdfEndYear) {
-        toast.error("Start year must be less than or equal to end year");
+        showValidationToast({
+          title: "Invalid year range.",
+          body: "Start year must be less than or equal to end year.",
+        });
         return;
       }
       if (!pdfStartYear || !pdfEndYear) {
-        toast.error("Please provide both start and end years");
+        showValidationToast({
+          title: "Year range required.",
+          body: "Please provide both a start year and an end year.",
+        });
         return;
       }
     } else {
       if (!pdfYear || pdfYear < 1980 || pdfYear > 2030) {
-        toast.error("Please provide a valid year (1980-2030)");
+        showValidationToast({
+          title: "Invalid year.",
+          body: "Please enter a year between 1980 and 2030.",
+        });
         return;
       }
     }
     startPdfAnalyzing();
     setPdfResult(null);
+    setPdfError(null);
     try {
       const uploadUrl = await generateUploadUrl();
       const uploadResult = await fetch(uploadUrl, {
@@ -165,7 +206,9 @@ export function QuestionScanner() {
       toast.success(`Added ${res.count} questions to the question bank!`);
     } catch (err) {
       console.error(err);
-      toast.error(err instanceof Error ? err.message : "Failed to process PDF");
+      const content = resolvePdfProcessingError(err);
+      setPdfError(content);
+      showErrorToast(content);
     } finally {
       stopPdfLoading();
     }
@@ -247,6 +290,14 @@ export function QuestionScanner() {
               <option key={subj} value={subj}>{subj}</option>
             ))}
           </select>
+
+          {analyzeError && (
+            <InlineError
+              {...analyzeError}
+              onRetry={handleAnalyze}
+              className="mb-4"
+            />
+          )}
 
           {isAnalyzing && analyzePhase && (
             <AiLoadingState phase={analyzePhase} />
@@ -439,6 +490,12 @@ export function QuestionScanner() {
                     analyzing: "Analyzing PDF...",
                     generating: "Extracting Questions...",
                   }}
+                />
+              )}
+              {pdfError && (
+                <InlineError
+                  {...pdfError}
+                  onRetry={handleProcessPdf}
                 />
               )}
               <div className="flex flex-wrap gap-3">
