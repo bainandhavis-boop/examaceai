@@ -8,6 +8,7 @@ import { OnboardingForm } from "./components/OnboardingForm";
 import { LandingValueProposition } from "./components/LandingValueProposition";
 import { LandingHowItWorks } from "./components/LandingHowItWorks";
 import { LandingSupportedExams } from "./components/LandingSupportedExams";
+import { useTrackPageView } from "./hooks/useTrackPageView";
 
 const LANDING_FEATURES = [
   {
@@ -67,6 +68,17 @@ export default function App() {
 function Content() {
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const userProfile = useQuery(api.examFunctions.getUserProfile);
+
+  const page =
+    loggedInUser === undefined || userProfile === undefined
+      ? null
+      : loggedInUser === null
+        ? "landing"
+        : !userProfile
+          ? "onboarding"
+          : null;
+
+  useTrackPageView(page);
 
   if (loggedInUser === undefined || userProfile === undefined) {
     return (

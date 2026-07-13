@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { DemoQuestionModal } from "./DemoQuestionModal";
+import { trackDemoQuestionOpened } from "../lib/analytics";
 
 type LandingValuePropositionProps = {
   onTryOwnQuestion: () => void;
@@ -24,7 +25,10 @@ export function LandingValueProposition({ onTryOwnQuestion }: LandingValuePropos
           </p>
           <button
             type="button"
-            onClick={() => setIsDemoOpen(true)}
+            onClick={() => {
+              trackDemoQuestionOpened();
+              setIsDemoOpen(true);
+            }}
             className="inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-blue-600 to-green-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all hover:from-blue-700 hover:to-green-700"
           >
             Try a Demo Question

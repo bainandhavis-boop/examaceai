@@ -16,6 +16,7 @@ import {
   showErrorToast,
   showValidationToast,
 } from "../lib/errors";
+import { trackQuestionSolved } from "../lib/analytics";
 
 export function QuestionScanner() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -108,6 +109,10 @@ export function QuestionScanner() {
       });
 
       setResult(analysisResult);
+      trackQuestionSolved({
+        subject: analysisResult.subject,
+        source: "image",
+      });
       toast.success("Question analyzed successfully!");
     } catch (error) {
       console.error("Analysis error:", error);
@@ -203,6 +208,10 @@ export function QuestionScanner() {
         endYear: useYearRange ? pdfEndYear : undefined,
       });
       setPdfResult({ count: res.count });
+      trackQuestionSolved({
+        subject: pdfSubject,
+        source: "pdf",
+      });
       toast.success(`Added ${res.count} questions to the question bank!`);
     } catch (err) {
       console.error(err);

@@ -7,6 +7,7 @@ import {
   resolveAuthError,
   showErrorToast,
 } from "./lib/errors";
+import { trackAnonymousSignIn, trackSignIn } from "./lib/analytics";
 
 export function SignInForm() {
   const { signIn } = useAuthActions();
@@ -19,6 +20,9 @@ export function SignInForm() {
     setSubmitting(true);
     setAuthError(null);
     void signIn("password", formData)
+      .then(() => {
+        trackSignIn(flow);
+      })
       .catch((error) => {
         const content = resolveAuthError(error, flow);
         setAuthError(content);
@@ -29,7 +33,11 @@ export function SignInForm() {
 
   const handleAnonymousSignIn = () => {
     setAuthError(null);
-    void signIn("anonymous").catch((error) => {
+    void signIn("anonymous")
+      .then(() => {
+        trackAnonymousSignIn();
+      })
+      .catch((error) => {
       const content = resolveAuthError(error, "signIn");
       setAuthError(content);
       showErrorToast(content);

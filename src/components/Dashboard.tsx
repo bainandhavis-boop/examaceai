@@ -6,11 +6,13 @@ import { MockExamGenerator } from "./MockExamGenerator";
 import { LiteratureTutor } from "./LiteratureTutor";
 import { WeeklyChallenge } from "./WeeklyChallenge";
 import { ProgressDashboard } from "./ProgressDashboard";
+import { useTrackDashboardTab } from "../hooks/useTrackPageView";
 
 type TabType = "home" | "scanner" | "mock-exams" | "literature" | "challenges" | "progress";
 
 export function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("home");
+  useTrackDashboardTab(activeTab);
   const userProfile = useQuery(api.examFunctions.getUserProfile);
   const testHistory = useQuery(api.examFunctions.getUserTestHistory);
 

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { cn } from "../lib/utils";
+import { trackDemoQuestionTryOwn } from "../lib/analytics";
 
 const DEMO_QUESTION = {
   examType: "JAMB",
@@ -59,6 +60,7 @@ export function DemoQuestionModal({
   if (!isOpen) return null;
 
   const handleTryOwnQuestion = () => {
+    trackDemoQuestionTryOwn();
     onClose();
     onTryOwnQuestion();
   };
