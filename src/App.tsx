@@ -1,4 +1,5 @@
 import { Authenticated, Unauthenticated, useQuery } from "convex/react";
+import { useState } from "react";
 import { api } from "../convex/_generated/api";
 import { SignInForm } from "./SignInForm";
 import { SignOutButton } from "./SignOutButton";
@@ -9,6 +10,10 @@ import { LandingValueProposition } from "./components/LandingValueProposition";
 import { LandingHowItWorks } from "./components/LandingHowItWorks";
 import { LandingSupportedExams } from "./components/LandingSupportedExams";
 import { useTrackPageView } from "./hooks/useTrackPageView";
+import { SchoolAdminPortal } from "./components/SchoolAdminPortal";
+import { TeacherPortal } from "./components/TeacherPortal";
+import { StudentPortal } from "./components/StudentPortal";
+import { SchoolSetupBanner } from "./components/SchoolSetup";
 
 const LANDING_FEATURES = [
   {
@@ -68,6 +73,8 @@ export default function App() {
 function Content() {
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const userProfile = useQuery(api.examFunctions.getUserProfile);
+  const schoolContext = useQuery(api.schoolFunctions.getMyMembership);
+  const [studentStudyMode, setStudentStudyMode] = useState(false);
 
   const page =
     loggedInUser === undefined || userProfile === undefined
@@ -80,7 +87,11 @@ function Content() {
 
   useTrackPageView(page);
 
-  if (loggedInUser === undefined || userProfile === undefined) {
+  if (
+    loggedInUser === undefined ||
+    userProfile === undefined ||
+    (loggedInUser !== null && schoolContext === undefined)
+  ) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -147,9 +158,56 @@ function Content() {
         {!userProfile ? (
           <OnboardingForm />
         ) : (
-          <Dashboard />
+          <RoleHome
+            role={schoolContext?.membership.role ?? null}
+            studentStudyMode={studentStudyMode}
+            onOpenStudyDashboard={() => setStudentStudyMode(true)}
+            onBackToStudentPortal={() => setStudentStudyMode(false)}
+          />
         )}
       </Authenticated>
     </div>
+  );
+}
+
+function RoleHome({
+  role,
+  studentStudyMode,
+  onOpenStudyDashboard,
+  onBackToStudentPortal,
+}: {
+  role: "student" | "teacher" | "school_admin" | null;
+  studentStudyMode: boolean;
+  onOpenStudyDashboard: () => void;
+  onBackToStudentPortal: () => void;
+}) {
+  if (role === "school_admin") {
+    return <SchoolAdminPortal />;
+  }
+
+  if (role === "teacher") {
+    return <TeacherPortal />;
+  }
+
+  if (role === "student" && !studentStudyMode) {
+    return <StudentPortal onOpenStudyDashboard={onOpenStudyDashboard} />;
+  }
+
+  return (
+    <>
+      {role === "student" && (
+        <div className="mb-4">
+          <button
+            type="button"
+            onClick={onBackToStudentPortal}
+            className="text-sm font-medium text-blue-700 hover:underline"
+          >
+            ← Back to student portal
+          </button>
+        </div>
+      )}
+      <SchoolSetupBanner />
+      <Dashboard />
+    </>
   );
 }

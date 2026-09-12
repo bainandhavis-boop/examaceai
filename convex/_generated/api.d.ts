@@ -13,7 +13,10 @@ import type * as auth from "../auth.js";
 import type * as examFunctions from "../examFunctions.js";
 import type * as examTypes from "../examTypes.js";
 import type * as http from "../http.js";
+import type * as rbac from "../rbac.js";
+import type * as roles from "../roles.js";
 import type * as router from "../router.js";
+import type * as schoolFunctions from "../schoolFunctions.js";
 import type * as seedData from "../seedData.js";
 
 import type {
@@ -28,7 +31,10 @@ declare const fullApi: ApiFromModules<{
   examFunctions: typeof examFunctions;
   examTypes: typeof examTypes;
   http: typeof http;
+  rbac: typeof rbac;
+  roles: typeof roles;
   router: typeof router;
+  schoolFunctions: typeof schoolFunctions;
   seedData: typeof seedData;
 }>;
 

@@ -1,13 +1,13 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { authTables } from "@convex-dev/auth/server";
-import { examTypeValidator } from "./examTypes";
+import { storedExamTypeValidator } from "./examTypes";
 
 const applicationTables = {
   // User profiles and progress
   userProfiles: defineTable({
     userId: v.id("users"),
-    examType: examTypeValidator,
+    examType: storedExamTypeValidator,
     targetYear: v.number(),
     subjects: v.array(v.string()),
     totalPoints: v.number(),
@@ -19,7 +19,7 @@ const applicationTables = {
 
   // Questions database
   questions: defineTable({
-    examType: examTypeValidator,
+    examType: storedExamTypeValidator,
     subject: v.string(),
     year: v.number(),
     questionText: v.string(),
@@ -36,7 +36,7 @@ const applicationTables = {
   // Mock exams
   mockExams: defineTable({
     title: v.string(),
-    examType: examTypeValidator,
+    examType: storedExamTypeValidator,
     subjects: v.array(v.string()),
     questionIds: v.array(v.id("questions")),
     duration: v.number(), // in minutes
@@ -99,7 +99,7 @@ const applicationTables = {
   literatureContent: defineTable({
     title: v.string(),
     author: v.string(),
-    examType: examTypeValidator,
+    examType: storedExamTypeValidator,
     chapters: v.array(v.object({
       title: v.string(),
       content: v.string(),
@@ -120,6 +120,37 @@ const applicationTables = {
     subjectsStudied: v.array(v.string()),
     pointsEarned: v.number(),
   }).index("by_user_date", ["userId", "date"]),
+
+  // School licensing
+  schools: defineTable({
+    name: v.string(),
+    code: v.string(),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+    isActive: v.boolean(),
+  }).index("by_code", ["code"]),
+
+  schoolMemberships: defineTable({
+    userId: v.id("users"),
+    schoolId: v.id("schools"),
+    role: v.union(
+      v.literal("student"),
+      v.literal("teacher"),
+      v.literal("school_admin"),
+    ),
+    status: v.union(
+      v.literal("active"),
+      v.literal("invited"),
+      v.literal("disabled"),
+    ),
+    // For students: which teacher is authorized to view their data
+    assignedTeacherId: v.optional(v.id("users")),
+    joinedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_school", ["schoolId"])
+    .index("by_school_and_role", ["schoolId", "role"])
+    .index("by_assigned_teacher", ["assignedTeacherId"]),
 };
 
 export default defineSchema({

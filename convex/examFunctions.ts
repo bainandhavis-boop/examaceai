@@ -233,7 +233,7 @@ export const submitTestAttempt = mutation({
   },
 });
 
-// Get user's test history
+// Get user's test history (own data only — students cannot query other users here)
 export const getUserTestHistory = query({
   args: {},
   handler: async (ctx) => {
